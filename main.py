@@ -6,7 +6,7 @@ from ttkbootstrap.scrolled import ScrolledText
 from ttkbootstrap.tableview import Tableview, TableColumn
 from openpyxl.styles import Border, Side, Alignment, Font, PatternFill, Color
 
-path = "/Users/fulk/Library/CloudStorage/OneDrive-SharedLibraries-ComputradeTechnologyInternational/[CSD] RnD - 2024/Timesheet Samudra.xlsx"
+path = ""
 
 
 class TimesheetForm(ttk.Frame):
