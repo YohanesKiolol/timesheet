@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledText
 from ttkbootstrap.tableview import Tableview, TableColumn
-from openpyxl.styles import Border, Side, Alignment, Font
+from openpyxl.styles import Border, Side, Alignment, Font, PatternFill, Color
 
-path = "/Users/yohaneskiolol/Library/CloudStorage/OneDrive-SharedLibraries-ComputradeTechnologyInternational/[CSD] RnD - 2024/Timesheet Yohan.xlsx"
+path = "/Users/fulk/Library/CloudStorage/OneDrive-SharedLibraries-ComputradeTechnologyInternational/[CSD] RnD - 2024/Timesheet Samudra.xlsx"
 
 
 class TimesheetForm(ttk.Frame):
@@ -27,7 +27,7 @@ class TimesheetForm(ttk.Frame):
         fend_date = end_date.strftime("%d/%m/%Y %H:%M:%S")
 
         # form variables
-        self.name = ttk.StringVar(value="Yohan")
+        self.name = ttk.StringVar(value="")
         self.start = ttk.StringVar(value=fstart_date)
         self.end = ttk.StringVar(value=fend_date)
         self.detail = ttk.StringVar(value="")
@@ -236,18 +236,24 @@ class TimesheetForm(ttk.Frame):
         start_cell.border = border_style
         start_cell.alignment = alignment_style
         start_cell.font = font_style
+        start_cell.fill = PatternFill(patternType='solid',
+                                        fill_type='solid', 
+                                        fgColor=Color('f8e5d8'))
 
         end_cell = sheet.cell(row=new_row_index, column=3)
         end_cell.value = end_formatted
         end_cell.border = border_style
         end_cell.alignment = alignment_style
         end_cell.font = font_style
+        end_cell.fill = PatternFill(patternType='solid',
+                                        fill_type='solid', 
+                                        fgColor=Color('f8e5d8'))
+
 
         detail_cell = sheet.cell(row=new_row_index, column=4)
         detail_cell.value = detail
         detail_cell.border = border_style
-        detail_cell.alignment = Alignment(
-            wrapText=TRUE, horizontal=LEFT, vertical=TOP)
+        detail_cell.alignment = alignment_style
         detail_cell.font = font_style
 
         mandays_cell = sheet.cell(row=new_row_index, column=5)
@@ -255,6 +261,9 @@ class TimesheetForm(ttk.Frame):
         mandays_cell.border = border_style
         mandays_cell.alignment = alignment_style
         mandays_cell.font = font_style
+        mandays_cell.fill = PatternFill(patternType='solid',
+                                        fill_type='solid', 
+                                        fgColor=Color('e4efdc'))
 
         workbook.save(path)
 
