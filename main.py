@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledText
 from ttkbootstrap.tableview import Tableview, TableColumn
-from openpyxl.styles import Border, Side, Alignment
+from openpyxl.styles import Border, Side, Alignment, Font
 
 path = "/Users/yohaneskiolol/Library/CloudStorage/OneDrive-SharedLibraries-ComputradeTechnologyInternational/[CSD] RnD - 2024/Timesheet Yohan.xlsx"
 
@@ -221,33 +221,40 @@ class TimesheetForm(ttk.Frame):
 
         alignment_style = Alignment(
             wrapText=TRUE, horizontal=CENTER, vertical=CENTER)
+        
+        font_style = Font(size = "10")
 
         new_row_index = sheet.max_row + 1
         name_cell = sheet.cell(row=new_row_index, column=1)
         name_cell.value = name
         name_cell.border = border_style
         name_cell.alignment = alignment_style
+        name_cell.font = font_style
 
         start_cell = sheet.cell(row=new_row_index, column=2)
         start_cell.value = start_formatted
         start_cell.border = border_style
         start_cell.alignment = alignment_style
+        start_cell.font = font_style
 
         end_cell = sheet.cell(row=new_row_index, column=3)
         end_cell.value = end_formatted
         end_cell.border = border_style
         end_cell.alignment = alignment_style
+        end_cell.font = font_style
 
         detail_cell = sheet.cell(row=new_row_index, column=4)
         detail_cell.value = detail
         detail_cell.border = border_style
         detail_cell.alignment = Alignment(
             wrapText=TRUE, horizontal=LEFT, vertical=TOP)
+        detail_cell.font = font_style
 
         mandays_cell = sheet.cell(row=new_row_index, column=5)
-        mandays_cell.value = f'=(HOUR(${end_cell.coordinate}-${start_cell.coordinate})/8)'
+        mandays_cell.value = f'=ROUND((HOUR(${end_cell.coordinate}-${start_cell.coordinate})/8), 2)'
         mandays_cell.border = border_style
         mandays_cell.alignment = alignment_style
+        mandays_cell.font = font_style
 
         workbook.save(path)
 
