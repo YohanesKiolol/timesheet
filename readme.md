@@ -8,3 +8,4 @@ Installing
    4. python3 -m pip install -r requirements.txt
 3. change path to onedrive timesheet file
 4. run python3 main.py
+5. run pyinstaller --onefile main.py to create exe file
