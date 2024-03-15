@@ -5,8 +5,12 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledText
 from ttkbootstrap.tableview import Tableview, TableColumn
 from openpyxl.styles import Border, Side, Alignment, Font, PatternFill, Color
+from ttkbootstrap.dialogs import Messagebox
+from dotenv import load_dotenv
+import os
 
-path = ""
+load_dotenv()
+path = os.getenv("CUSTOM_PATH")
 
 
 class TimesheetForm(ttk.Frame):
@@ -14,60 +18,52 @@ class TimesheetForm(ttk.Frame):
     def __init__(self, master):
         super().__init__(master, padding=(20, 10))
         self.pack(fill=BOTH, expand=YES)
-        start_date = datetime.now()
-        minutes = round((start_date.minute + 7.5) / 15) * 15
+        end_date = datetime.now()
+        minutes = round((end_date.minute + 7.5) / 15) * 15
         if minutes > 45:
-            start_date += timedelta(hours=1)
+            end_date += timedelta(hours=1)
             minutes = 0
 
-        start_date = start_date.replace(minute=minutes)
-        start_date = start_date.replace(second=0)
-        end_date = start_date + timedelta(hours=1)
+        end_date = end_date.replace(minute=minutes)
+        end_date = end_date.replace(second=0)
+        start_date = end_date - timedelta(hours=1)
         fstart_date = start_date.strftime("%d/%m/%Y %H:%M:%S")
         fend_date = end_date.strftime("%d/%m/%Y %H:%M:%S")
 
         # form variables
-        self.name = ttk.StringVar(value="")
+        self.name = ttk.StringVar(value=os.getenv("NAME"))
         self.start = ttk.StringVar(value=fstart_date)
         self.end = ttk.StringVar(value=fend_date)
         self.detail = ttk.StringVar(value="")
 
-        # form entries
-
         form_frame = ttk.Frame(self)
-        form_frame.pack(side=LEFT, fill=Y)
-
-        # # form header
-        # f_hdr = "Insert New Timesheet"
-        # f_lbl = ttk.Label(form_frame, text=f_hdr, width=50)
-        # f_lbl.pack(fill=X, pady=10)
+        form_frame.pack(fill=X, expand=YES)
 
         self.create_form_entry("NAME", self.name, form_frame)
-        self.create_form_entry("START", self.start, form_frame, 'date')
-        self.create_form_entry("END", self.end, form_frame, 'date')
-        self.create_form_entry("DETAIL", self.detail, form_frame, 't_area')
+        self.create_form_entry("START", self.start, form_frame, "date")
+        self.create_form_entry("END", self.end, form_frame, "date")
+        self.create_form_entry("DETAIL", self.detail, form_frame, "t_area")
         self.create_buttonbox(form_frame)
-
-        table_frame = ttk.Frame(self)
-        table_frame.pack(side=RIGHT, fill=BOTH, expand=YES)
 
         self.create_table()
 
-    def create_table(self):
         l_frame = ttk.Frame(self)
-        l_frame.pack(fill=X)
-        # l_hdr = "Timesheet"
-        # l_lbl = ttk.Label(l_frame, text=l_hdr)
-        # l_lbl.pack(side=LEFT, padx=5)
+        l_frame.pack(fill=X, pady=(15, 10))
+
+        ref_btn = ttk.Button(
+            master=l_frame,
+            text="Refresh",
+            command=self.refresh_table,
+            bootstyle=SUCCESS,
+        )
+        ref_btn.pack(side=LEFT, padx=5)
 
         del_btn = ttk.Button(
-            master=l_frame,
-            text="Delete",
-            command=self.on_delete,
-            bootstyle=DANGER
+            master=l_frame, text="Delete", command=self.on_delete, bootstyle=DANGER
         )
-        del_btn.pack(side=RIGHT, padx=5)
+        del_btn.pack(side=LEFT, padx=5)
 
+    def create_table(self):
         columns = [
             {"text": "NAME", "stretch": False},
             {"text": "START", "stretch": False},
@@ -81,16 +77,19 @@ class TimesheetForm(ttk.Frame):
         sheet = workbook.active
         list_values = list(sheet.values)
 
-        self.treeview = Tableview(self, coldata=columns, paginated=True,
-                                  searchable=True, rowdata=list_values[1:][::-1])
+        self.treeview = Tableview(
+            self,
+            coldata=columns,
+            searchable=True,
+            rowdata=list_values[1:][::-1],
+            autofit=TRUE,
+        )
+        TableColumn(self.treeview, 0, "NAME").hide()
+        TableColumn(self.treeview, 4, "MANDAYS").hide()
+        TableColumn(self.treeview, 5, "NONE").hide()
+        self.treeview.pack(fill=BOTH, expand=YES, padx=10, pady=(0, 7))
 
-        TableColumn(self.treeview, 4, 'MANDAYS').hide()
-        TableColumn(self.treeview, 5, 'NONE').hide()
-        # self.treeview.view.bind("<<TreeviewSelect>>", self.tetete())
-        # self.treeview.view.bind("<<TreeviewSelect>>", tetete)
-        self.treeview.pack(fill=BOTH, expand=YES, padx=10, pady=10)
-
-    def refresh_table(self):
+    def refresh_table(self, data=NONE):
         # Clear existing data in the treeview
         self.treeview.delete_rows()
 
@@ -98,12 +97,17 @@ class TimesheetForm(ttk.Frame):
         workbook = openpyxl.load_workbook(path)
         sheet = workbook.active
         list_values = list(sheet.values)
+        last_data = list_values[-1]
+        if data is not NONE:
+            if last_data != data:
+                Messagebox.show_error(
+                    "Cannot submit data, please check if theres other operation opening the file"
+                )
 
         self.treeview.insert_rows(0, list_values[1:][::-1])
         self.treeview.load_table_data()
 
     def create_form_entry(self, label, variable, container, type=None):
-
         container = ttk.Frame(container)
         container.pack(fill=X, expand=YES, pady=5)
 
@@ -111,40 +115,47 @@ class TimesheetForm(ttk.Frame):
         lbl.pack(side=LEFT, padx=5)
 
         if type == "date":
-            date_object = datetime.strptime(
-                variable.get(), "%d/%m/%Y %H:%M:%S")
+            date_object = datetime.strptime(variable.get(), "%d/%m/%Y %H:%M:%S")
             l_minutes = [0, 15, 30, 45]
-            fdate = ttk.DateEntry(
-                master=container, dateformat='%d/%m/%Y')
+            fdate = ttk.DateEntry(master=container, dateformat="%d/%m/%Y")
             fdate.pack(side=LEFT, padx=5)
 
-            fhour = ttk.Spinbox(
-                master=fdate, from_=9, to=19, width=3)
+            fhour = ttk.Spinbox(master=fdate, from_=9, to=19, width=3)
             fhour.pack(side=LEFT, padx=5)
             fhour.set(date_object.hour)
 
-            fmin = ttk.Combobox(
-                master=fdate, values=l_minutes, width=3)
+            fmin = ttk.Combobox(master=fdate, values=l_minutes, width=3)
             fmin.pack(side=LEFT)
             m_idx = l_minutes.index(date_object.minute)
             fmin.current(m_idx)
 
-            fdate.bind("<FocusOut>", lambda event,
-                       sv=variable: self.one_date_change(sv, fdate.entry.get()))
+            fdate.bind(
+                "<FocusOut>",
+                lambda event, sv=variable: self.one_date_change(sv, fdate.entry.get()),
+            )
 
-            fhour.bind("<FocusOut>", lambda event,
-                       sv=variable: self.on_hour_change(sv, fhour.get()))
+            fhour.bind(
+                "<FocusOut>",
+                lambda event, sv=variable: self.on_hour_change(sv, fhour.get()),
+            )
 
-            fmin.bind("<FocusOut>", lambda event,
-                      sv=variable: self.on_min_change(sv, fmin.get()))
+            fmin.bind(
+                "<FocusOut>",
+                lambda event, sv=variable: self.on_min_change(sv, fmin.get()),
+            )
 
-        elif type == 't_area':
+        elif type == "t_area":
             field = ScrolledText(
-                master=container, height=8, width=45, wrap=WORD, autohide=TRUE)
+                master=container, height=8, width=45, wrap=WORD, autohide=TRUE
+            )
             field.pack(side=LEFT, padx=3)
 
-            field.bind("<FocusOut>", lambda event,
-                       sv=variable: self.on_change(sv, field.get("1.0", "end-1c")))
+            field.bind(
+                "<FocusOut>",
+                lambda event, sv=variable: self.on_change(
+                    sv, field.get("1.0", "end-1c")
+                ),
+            )
 
         else:
             field = ttk.Entry(master=container, textvariable=variable)
@@ -158,7 +169,8 @@ class TimesheetForm(ttk.Frame):
         new_date = datetime.strptime(new_value, "%d/%m/%Y")
         date_obj = datetime.strptime(variable.get(), "%d/%m/%Y %H:%M:%S")
         updated_date_obj = date_obj.replace(
-            day=new_date.day, month=new_date.month, year=new_date.year)
+            day=new_date.day, month=new_date.month, year=new_date.year
+        )
         variable.set(updated_date_obj.strftime("%d/%m/%Y %H:%M:%S"))
 
     def on_hour_change(self, variable, new_value):
@@ -195,15 +207,11 @@ class TimesheetForm(ttk.Frame):
         cnl_btn.pack(side=LEFT, padx=5)
 
     def on_submit(self):
+
         name = self.name.get()
         start = self.start.get()
         end = self.end.get()
         detail = self.detail.get()
-
-        # print("Name:", name)
-        # print("Start:", start)
-        # print("End:", end)
-        # print("Detail:", detail)
 
         start = datetime.strptime(start, "%d/%m/%Y %H:%M:%S")
         start_formatted = start.strftime("%d-%b-%y %H.%M")
@@ -214,15 +222,16 @@ class TimesheetForm(ttk.Frame):
         workbook = openpyxl.load_workbook(path)
         sheet = workbook.active
 
-        border_style = Border(left=Side(border_style='thin', color='000000'),
-                              right=Side(border_style='thin', color='000000'),
-                              top=Side(border_style='thin', color='000000'),
-                              bottom=Side(border_style='thin', color='000000'))
+        border_style = Border(
+            left=Side(border_style="thin", color="000000"),
+            right=Side(border_style="thin", color="000000"),
+            top=Side(border_style="thin", color="000000"),
+            bottom=Side(border_style="thin", color="000000"),
+        )
 
-        alignment_style = Alignment(
-            wrapText=TRUE, horizontal=CENTER, vertical=CENTER)
-        
-        font_style = Font(size = "10")
+        alignment_style = Alignment(wrapText=TRUE, horizontal=CENTER, vertical=CENTER)
+
+        font_style = Font(size="10")
 
         new_row_index = sheet.max_row + 1
         name_cell = sheet.cell(row=new_row_index, column=1)
@@ -236,19 +245,18 @@ class TimesheetForm(ttk.Frame):
         start_cell.border = border_style
         start_cell.alignment = alignment_style
         start_cell.font = font_style
-        start_cell.fill = PatternFill(patternType='solid',
-                                        fill_type='solid', 
-                                        fgColor=Color('f8e5d8'))
+        start_cell.fill = PatternFill(
+            patternType="solid", fill_type="solid", fgColor=Color("f8e5d8")
+        )
 
         end_cell = sheet.cell(row=new_row_index, column=3)
         end_cell.value = end_formatted
         end_cell.border = border_style
         end_cell.alignment = alignment_style
         end_cell.font = font_style
-        end_cell.fill = PatternFill(patternType='solid',
-                                        fill_type='solid', 
-                                        fgColor=Color('f8e5d8'))
-
+        end_cell.fill = PatternFill(
+            patternType="solid", fill_type="solid", fgColor=Color("f8e5d8")
+        )
 
         detail_cell = sheet.cell(row=new_row_index, column=4)
         detail_cell.value = detail
@@ -257,41 +265,58 @@ class TimesheetForm(ttk.Frame):
         detail_cell.font = font_style
 
         mandays_cell = sheet.cell(row=new_row_index, column=5)
-        mandays_cell.value = f'=ROUND((HOUR(${end_cell.coordinate}-${start_cell.coordinate})/8), 2)'
+        mandays_cell.value = (
+            f"=ROUND((HOUR(${end_cell.coordinate}-${start_cell.coordinate})/8), 2)"
+        )
         mandays_cell.border = border_style
         mandays_cell.alignment = alignment_style
         mandays_cell.font = font_style
-        mandays_cell.fill = PatternFill(patternType='solid',
-                                        fill_type='solid', 
-                                        fgColor=Color('e4efdc'))
+        mandays_cell.fill = PatternFill(
+            patternType="solid", fill_type="solid", fgColor=Color("e4efdc")
+        )
 
         workbook.save(path)
 
-        self.refresh_table()
+        t_data = (
+            name,
+            start_formatted,
+            end_formatted,
+            detail,
+            mandays_cell.value,
+        )
+
+        self.refresh_table(t_data)
 
     def on_cancel(self):
         self.quit()
 
     def on_delete(self):
+        d_values = []
         workbook = openpyxl.load_workbook(path)
         sheet = workbook.active
-
         s_rows = self.treeview.view.selection()
         for row_id in s_rows:
-            value = self.treeview.view.item(row_id, 'values')
+            value = self.treeview.view.item(row_id, "values")
             for row in sheet.iter_rows(values_only=True):
-                t_row = tuple(
-                    'None' if value is None else value for value in row)
+                t_row = tuple("None" if value is None else value for value in row)
                 if t_row == value:
+                    d_values.append(t_row)
                     index = list(sheet.iter_rows(values_only=True)).index(row)
-                    sheet.delete_rows(index+1, 1)
+                    sheet.delete_rows(index + 1, 1)
             self.treeview.delete_row(iid=row_id)
         workbook.save(path)
+        list_values = list(sheet.values)
+        for value in d_values:
+            if value in list_values:
+                Messagebox.show_error(
+                    "Cannot delete data, please check if theres other operation opening the file"
+                )
+
         self.treeview.load_table_data()
 
 
 if __name__ == "__main__":
-    app = ttk.Window("Timesheet", "solar", resizable=(False, False))
+    app = ttk.Window("Timesheet", "solar", resizable=(True, False))
     timesheet = TimesheetForm(app)
     timesheet.pack(padx=10, pady=10)
     app.mainloop()
