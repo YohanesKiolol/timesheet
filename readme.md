@@ -1,6 +1,4 @@
-# Project Name
-
-This project is designed to [describe what the project does or its purpose].
+# Timesheet 🔥
 
 ## Installation
 
