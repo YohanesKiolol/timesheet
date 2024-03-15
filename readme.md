@@ -1,5 +1,7 @@
 # Timesheet 🔥
 
+This project is designed to insert a timesheet for onedrive excel file
+
 ## Installation
 
 ### Prerequisites
