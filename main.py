@@ -97,12 +97,12 @@ class TimesheetForm(ttk.Frame):
         workbook = openpyxl.load_workbook(path)
         sheet = workbook.active
         list_values = list(sheet.values)
-        last_data = list_values[-1]
-        if data is not NONE:
-            if last_data != data:
-                Messagebox.show_error(
-                    "Cannot submit data, please check if theres other operation opening the file"
-                )
+        # last_data = list_values[-1]
+        # if data is not NONE:
+        #     if last_data != data:
+        #         Messagebox.show_error(
+        #             "Cannot submit data, please check if theres other operation opening the file"
+        #         )
 
         self.treeview.insert_rows(0, list_values[1:][::-1])
         self.treeview.load_table_data()
